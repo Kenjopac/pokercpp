@@ -1,7 +1,7 @@
 #include <iostream>
 #include <vector>
 #include "poker.h"
-
+using namespace std;
 Hand Straight(Hand hand){
   vector<Card> straight; 
       int cardCounterReversed = hand.cardsInHand.size() - 1;
@@ -17,7 +17,7 @@ Hand Straight(Hand hand){
         }
       }
   return Hand();
-} // returns highest value of straight,
+}; // returns highest value of straight,
 Hand Flush(Hand hand){
   for (int suit = 0; suit < sizeof(hand.countOfSuits);suit++){
     if (hand.countOfSuits[suit] >=5){
@@ -33,9 +33,9 @@ Hand Flush(Hand hand){
     }
   }
   return Hand();
-}
-  for (int suit = 0; suit <  sizeof(hand.countOfSuits); suit++){
-    
+};
+Hand StraightFlush(Hand hand){ // add highest value...
+  for (int suit = 0; suit < sizeof(hand.countOfSuits); suit++){
     if (hand.countOfSuits[suit] >= 5){ // first test if there are enough of the suit, not enough cards for multiple straight flushes, in order is fine
       //then make new hand of only same suited cards
       vector<Card> cardsOfSameSuit;
@@ -62,13 +62,73 @@ Hand OfAKind(int getRepeats, Hand hand){
       return Hand(sameValue);
     }
   }
+  
   return Hand();
-}//returns value of a repeated card 
+};//returns value of a repeated card 
+Hand FullHouse(Hand hand){
+  vector<Card> fullHouse;
+  
+  bool hastwo, hasthree;
+  for (int i = NUM_OF_VALUES; i >= 0; i--){
+    if (hand.countOfValues[i] == 3){
+      hasthree = true;
+    } else if (hand.countOfValues[i] == 2){
+      hastwo = true;
+    } 
+  }
+  if (hasthree && hastwo){
+    Hand FullHouse = OfAKind(3, hand);
+    Hand twoOfAKind = OfAKind(2, hand);
+    for (Card card: twoOfAKind.cardsInHand){
+      FullHouse.addCard(card);
+    }
+    return FullHouse;
+  }else {
+    return Hand();
+  }
+  
+};
+Hand TwoPair(Hand hand){
+  int pairs = 0;
+  for (int value: hand.countOfValues){
+    if (value == 2){
+      pairs++;
+    }
+  }
+  if (pairs >= 2){
+    Hand twopairHand = OfAKind(2, hand);
+    for (Card card: twopairHand.cardsInHand){
+      hand.removeCard(card);
+    }
+    for (Card card: OfAKind(2, hand).cardsInHand){
+      
+      twopairHand.addCard(card);
+    }
+    return twopairHand;
+  } else{
+    return Hand();
+  }
+};
 
 Hand HighestCombo(Hand hand){
-  vector <Card> NoCards;
-  if (NoCards == StraightFlush(hand.cardsInHand).cardsInHand){
-    
+  if (StraightFlush(hand).isEmpty == false ){
+    return StraightFlush(hand);
+  } else if (OfAKind(4,hand).isEmpty == false ){
+    return OfAKind(4,hand);
+  } else if (FullHouse(hand).isEmpty == false){
+    return FullHouse(hand);
+  } else if (Flush(hand).isEmpty == false){
+    return Flush(hand);
+  } else if (Straight(hand).isEmpty == false){
+    return Straight(hand);
+  } else if (OfAKind(3,hand).isEmpty == false){
+    return OfAKind(3,hand);
+  } else if (TwoPair(hand).isEmpty == false){
+    return TwoPair(hand);
+  } else if (OfAKind(2,hand).isEmpty == false){
+    return OfAKind(2,hand);
+  } else {
+    return hand;
   }
     
 };
