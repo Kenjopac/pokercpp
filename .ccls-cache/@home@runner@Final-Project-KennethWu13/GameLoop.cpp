@@ -46,6 +46,24 @@ void RightMessage(string message, string fill){
   cout<<message;
   cout<<endl;
 }
+void LeftAndRightMessage(string leftMessage, string rightMessage,string fill){
+  cout<<leftMessage;
+  for (int i = 0; i < LENGTH_OF_LINE - leftMessage.length() - rightMessage.length();i++){
+    cout<<fill;
+  }
+  cout<<rightMessage;
+  cout<<endl;
+}
+
+void startscreen(vector<Card> tableCards, int buyInAmount, vector<AI> oponents, Player player){
+CenterMessage("Cards", "=");
+CenterMessage("","=");
+string buyInMessage = "Buy in: ";
+buyInMessage.append(to_string(buyInAmount));
+CenterMessage(buyInMessage , " ");
+LeftAndRightMessage(oponents, string rightMessage, string fill)
+}
+
 
 void MenuLoop(){
         //15             16              15
@@ -67,7 +85,7 @@ void MenuLoop(){
     
   }while (Start == false);
   GameLoop(StartCash);
-}
+}                                                                                
 void GameLoop(int startCash){
   initCards();
   
@@ -75,6 +93,6 @@ void GameLoop(int startCash){
 }
 
 
-void EndScreen(){
+void EndScreen(bool win){
   
 }
