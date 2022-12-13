@@ -6,7 +6,7 @@
 const int NUM_OF_SUITS = 3;
 const int NUM_OF_VALUES = 12;
 const int CARDS_IN_DECK = 52;
-
+const int LARGE_NUMBER = 999999;
 //Card logic
 std::string NameCard(int value, int suit);
 struct Card{
@@ -39,9 +39,7 @@ Hand(){
   isEmpty = true;
 }
 Hand(std::vector<Card> InitialHand){
-    cardsInHand = sortCards(InitialHand);
-    updateData(cardsInHand);
-    isEmpty = false;
+    updateHand(InitialHand);
 };
 };
 //Player class
@@ -74,6 +72,8 @@ Hand currentCardsPlusTable;
 bool hasChecked;//condition for checking if Checked1
 std::string decisionMessage = "\"time to win!\"";
 void buyIn(int buyIn, int& potAmount);
+std::string getBalance();
+void changeBal(int amounttoadd);
 int MakeDecision(int pendingCall,int potAmount, int roundCounter);
 /*
 void PreFlopDecision(int potAmount, int roundCounter, std::vector<int> bets);
@@ -92,7 +92,7 @@ AI(int balance, std::string inputName){
 
 //Return Highest Combo
 float HighestComboValue(Hand hand);
-
+Hand HighestCombo(Hand hand);
 //Handle Game Logic
 void MenuLoop();
 void GameLoop(int startCash,Player& player);

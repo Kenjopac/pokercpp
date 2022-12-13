@@ -9,6 +9,8 @@ int PromptLoop(int pendingAmount, int& Balance, bool& hasChecked, bool& roundAct
   char input;
   cout<<pendingAmount<<"$ Pending.   F to fold, C to call, R to raise: ";
   cin>>input;
+  cin.clear();
+  cin.ignore(LARGE_NUMBER, '\n' );
 if (cin.fail()){
   cout<<"Must be single letter F, C, or R"<<endl;
 }else{
@@ -25,6 +27,7 @@ if (cin.fail()){
         hasChecked = true;
         return pendingAmount;
       case 'R':case 'r':
+        cout<<"Raise how much: ";
         if (Balance <= pendingAmount){
           cout<<"Balance must be greater than "<<pendingAmount<<"$ to raise"<<endl;
           break;

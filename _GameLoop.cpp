@@ -5,17 +5,19 @@
 #include <algorithm>
 using namespace std;
 int LENGTH_OF_LINE = 60; //for spacing messages
+int NUM_OF_OPONENTS = 2;
+
+/*
 int getIndex(int value, int suit){
   return value * 4 + suit;
 } // index of a card given value and suit
-
+*/
 vector<Card> SORTED_DECK, playingDeck;
 vector<Card> shuffleDeck(vector<Card> UnshuffledDeck){
   random_shuffle(UnshuffledDeck.begin(),UnshuffledDeck.end());
   return UnshuffledDeck;
 } //returns shuffled parameter deck
 vector<AI> Oponents;
-int NUM_OF_OPONENTS = 2;
 void initCards(){ 
   int cardindex = 0;
     for (int value = 0; value <= NUM_OF_VALUES; value++){
@@ -60,7 +62,6 @@ void LeftAndRightMessage(string leftMessage, string rightMessage,string fill){
   cout<<rightMessage;
   cout<<endl;
 }
-
 void CardDisplay(vector<Card> tableCards){
   if (tableCards.size() == 0){
     CenterMessage("Table's cards will be", "=");
@@ -124,6 +125,9 @@ void PlayerUI(Player player, int roundNum){
 }
 
 void DisplayScreen(vector<Card> tableCards, int pot, Player player,int roundNum){
+string roundNames[5] = {"pre-flop","flop","turn","river","showdown"};
+cout<<endl;
+CenterMessage(roundNames[roundNum]," ");
 CardDisplay(tableCards);
 string buyInMessage;
 if (roundNum == 0){
@@ -143,27 +147,32 @@ void MenuLoop(){
   CenterMessage("Welcome to Poker","-");
   RightMessage("By Kenneth Wu", "-");
   bool Start = false;
-  int StartCash  = 0;
-  do {
+  int StartCash;
+  while (Start == false) {
+    int input;
+    cout<<endl;
     cout<<"How much money to start with: ";
-    cin>>StartCash;
-    if (cin.fail() || StartCash < 10){
+    cin>>input;
+    cout<<endl;
+    cin.clear();
+    cin.ignore(LARGE_NUMBER, '\n' );
+    if (cin.fail() || input < 10){
       CenterMessage("Money must be an integer >= 10", "*");
-    } else{
+    } else {
       LeftMessage("Press any key then enter to start", "-");
       string throwaway;
       cin>>throwaway;
       Start = true;
+      StartCash = input; 
     }
-  }while (Start == false);
+  };
   Oponents.clear();
   for (int i = 0; i < NUM_OF_OPONENTS;i++){
     Oponents.push_back(AI(StartCash,"thing " + to_string(i)));
   }
   Player player = Player(StartCash, "Kenneth");
   GameLoop(StartCash,player);
-}                                                                           
-vector<Card> testTable = {Card(2,2,getIndex(2,2)),Card(3,2,getIndex(3,2)),Card(8,0,getIndex(8,0)),Card(1,3,getIndex(1,3)),Card(5,2,getIndex(5,2)) };
+} 
 
 bool checkWin( vector<AI> oponents, int buyIn){
   if (oponents[0].Balance < buyIn && oponents[1].Balance < buyIn){
@@ -180,12 +189,16 @@ bool checkLoss(Player player, int buyIn){
   }
 };
 void DealCards(vector<AI>& oponents, Player& player){
+  vector<Card> emptyhand = {};
+  player.currentCards.updateHand(emptyhand);
+  
   int DeckIndexer = 0;
   
-  for (AI a : oponents){
-    a.currentCards.addCard(playingDeck[DeckIndexer]);
+  for (int i = 0;i <oponents.size() ;i++){
+    oponents[i].currentCards.updateHand(emptyhand);
+    oponents[i].currentCards.addCard(playingDeck[DeckIndexer]);
     DeckIndexer++;
-    a.currentCards.addCard(playingDeck[DeckIndexer]);
+    oponents[i].currentCards.addCard(playingDeck[DeckIndexer]);
     DeckIndexer++;
   }
   player.currentCards.addCard(playingDeck[DeckIndexer]);
@@ -205,6 +218,7 @@ void GetDecisions(Player& player, int roundNum, vector<Card> tableCards, int& po
     }
   }
   while(!(player.hasChecked && Oponents[0].hasChecked && Oponents[1].hasChecked)){
+      DisplayScreen(tableCards, potAmount, player, roundNum);
       pendingAmount = player.PendingDecision(roundNum, pendingAmount);
       if (player.hasChecked == false){
         player.hasChecked = true;
@@ -226,13 +240,23 @@ void GetDecisions(Player& player, int roundNum, vector<Card> tableCards, int& po
         player.hasChecked = false;
       }
       potAmount += pendingAmount;
-      DisplayScreen(tableCards, potAmount, player, roundNum);
+      
   } 
   
   //if all checked then move on
 }
 
 void RoundLoop( Player& player,int& deckIndex, int& roundNumber,vector<Card>& table, int& potAmount){
+  int HowManyPlayersFold = 0;
+  if (player.roundActive == false){
+    HowManyPlayersFold++;
+  }
+  for (AI oponent: Oponents){
+    if (oponent.roundActive == false){
+      HowManyPlayersFold++;
+    }
+  }
+  if (HowManyPlayersFold <= 1){
   int currentDeckIndex = deckIndex;
   if (roundNumber == 1){
     
@@ -245,50 +269,69 @@ void RoundLoop( Player& player,int& deckIndex, int& roundNumber,vector<Card>& ta
     table.push_back(playingDeck[deckIndex]);
     deckIndex++;
     GetDecisions(player, roundNumber,table, potAmount);
-  }
+  } 
+  
+  } 
   roundNumber++;
 }
 
 void getWinner( Player& player,vector<Card> table, int potAmount){
+  vector<Card> playerOne = player.currentCards.cardsInHand;
+  vector<Card> Oponent0 = Oponents[0].currentCards.cardsInHand;
+  vector<Card> Oponent1 = Oponents[1].currentCards.cardsInHand;
   for (Card card: table){
-    player.currentCardsPlusTable.addCard(card);
-    Oponents[0].currentCardsPlusTable.addCard(card);
-    Oponents[1].currentCardsPlusTable.addCard(card);
+    playerOne.push_back(card);
+    Oponent0.push_back(card);
+    Oponent1.push_back(card);
   }
+  
+  player.currentCardsPlusTable.updateHand(playerOne);
+  Oponents[0].currentCardsPlusTable.updateHand(Oponent0);
+  Oponents[1].currentCardsPlusTable.updateHand(Oponent1);
+  
   player.highestHandValue = HighestComboValue(player.currentCardsPlusTable);
   Oponents[0].highestHandValue = HighestComboValue(Oponents[0].currentCardsPlusTable);
   Oponents[1].highestHandValue = HighestComboValue(Oponents[1].currentCardsPlusTable);
-  int maxVal = player.highestHandValue > Oponents[0].highestHandValue ? player.highestHandValue : Oponents[0].highestHandValue;
-  maxVal = maxVal > Oponents[1].highestHandValue ? maxVal: Oponents[1].highestHandValue;
   
+  float maxVal = 0 ;
+  if (player.roundActive == true){
+      maxVal = maxVal > player.highestHandValue ? maxVal: player.highestHandValue;
+  }
+  for (AI oponent : Oponents){
+    if (oponent.roundActive == true){
+      maxVal = maxVal > oponent.highestHandValue ? maxVal: oponent.highestHandValue;
+    }
+  }
+  cout<<maxVal <<endl;
   int numberOfWinners = 0;
   for (AI oponent: Oponents){
-    if (oponent.highestHandValue == maxVal){
+    if (oponent.highestHandValue == maxVal && oponent.roundActive != false){
       numberOfWinners++;
     } 
   }
-  if (player.highestHandValue == maxVal){
+  if (player.highestHandValue == maxVal && player.roundActive != false){
     numberOfWinners++;
     player.Balance += potAmount / numberOfWinners > player.winnablePot ? player.winnablePot : potAmount / numberOfWinners;
   }
-  for (AI oponent: Oponents){
-    if (oponent.highestHandValue == maxVal){
-      oponent.Balance += potAmount / numberOfWinners  > oponent.winnablePot? player.winnablePot: potAmount / numberOfWinners;
-    }
+
+  if (Oponents[0].highestHandValue == maxVal && Oponents[0].roundActive != false){
+    Oponents[0].Balance += potAmount / numberOfWinners > Oponents[0].winnablePot ? Oponents[0].winnablePot : potAmount / numberOfWinners;
   }
-  cout<<" split wins "<<numberOfWinners<<endl;
-  cout<<"max value: "<<maxVal<<" player value: "<<player.highestHandValue<<endl;
-  cout<<" op0 value: "<<Oponents[0].highestHandValue<<endl;
-  cout<<" op1 value: "<<Oponents[1].highestHandValue<<endl;
-  cout<<"pot amount: " <<potAmount<<endl;
+  if (Oponents[1].highestHandValue == maxVal && Oponents[1].roundActive != false){
+    Oponents[1].Balance += potAmount / numberOfWinners > Oponents[1].winnablePot ? Oponents[1].winnablePot : potAmount / numberOfWinners;
+  }
+  
   cout<<" "<<endl;
   CardDisplay(table);
-  LeftMessage(Oponents[0].name + "("+ to_string(Oponents[0].Balance) + "$): " , "-");
-  CenterMessage(Oponents[0].currentCards.readHand(), "-");
-  LeftMessage(Oponents[1].name + "("+ to_string(Oponents[1].Balance) + "$): " , "-");
-  CenterMessage(Oponents[1].currentCards.readHand(), "-");
+  LeftMessage(Oponents[0].name + "("+ Oponents[0].getBalance() + "$): " , "-");
+  LeftMessage(Oponents[0].currentCards.readHand(), "-");
+  RightMessage(to_string(Oponents[0].highestHandValue)," ");
+  LeftMessage(Oponents[1].name + "("+ Oponents[1].getBalance() + "$): " , "-");
+  LeftMessage(Oponents[1].currentCards.readHand(), "-");
+  RightMessage(to_string(Oponents[1].highestHandValue)," ");
   CenterMessage("Your balance is "+ to_string(player.Balance), " ");
   CenterMessage(player.currentCards.readHand(), " ");
+  RightMessage(to_string(player.highestHandValue)," ");
   
 }
 
@@ -302,12 +345,13 @@ void GameLoop(int startCash, Player& player){
   playingDeck = SORTED_DECK;
   
   do{
+  
   if (player.Balance > buyIn){
     player.roundActive = true;
   }
-  for (AI oponent: Oponents){
-    if (oponent.Balance > buyIn){
-    oponent.roundActive = true;
+  for (int oponentindex = 0; oponentindex <Oponents.size();oponentindex++){
+    if (Oponents[oponentindex].Balance > buyIn){
+    Oponents[oponentindex].roundActive = true;
     }
   }
   roundNum = 0;
@@ -329,10 +373,12 @@ void GameLoop(int startCash, Player& player){
   player.winnablePot = player.Balance;
   Oponents[0].winnablePot = Oponents[0].Balance;
   Oponents[1].winnablePot = Oponents[1].Balance;
-  GetDecisions(player, roundNum, table, potAmount);
+  
+  GetDecisions(player,roundNum,table,potAmount);
   RoundLoop(player, deckIndexer, roundNum, table,potAmount);
   RoundLoop(player, deckIndexer, roundNum, table,potAmount);
   RoundLoop(player, deckIndexer, roundNum, table,potAmount);
+  DisplayScreen(table, potAmount, player, roundNum);
   getWinner(player,table, potAmount);
   cout<<endl;
   cout<<"enter any Key to Continue (X to restart): ";
@@ -346,7 +392,6 @@ void GameLoop(int startCash, Player& player){
   }while(!checkWin(Oponents, buyIn) || !checkLoss(player,buyIn));
   EndScreen(checkLoss(player,buyIn));
 }
-
 
 void EndScreen(bool lost){
   if (lost){

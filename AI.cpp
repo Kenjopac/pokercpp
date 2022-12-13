@@ -1,9 +1,17 @@
 #include <iostream>
 #include <vector>
 #include "poker.h"
+
 using namespace std;
 
-
+void AI::changeBal(int amounttoadd){
+  cout<<amounttoadd<<" "<<Balance<<endl;
+  Balance += amounttoadd;
+  cout<<Balance<<endl;
+}
+string AI::getBalance(){
+  return to_string(Balance);
+}
 void AI::buyIn(int buyIn, int& potAmount){
   if (roundActive == true){
     potAmount += buyIn;
@@ -12,6 +20,7 @@ void AI::buyIn(int buyIn, int& potAmount){
 }
 //factor in current balance, factor in current hand, factorin table hand
 int AI::MakeDecision(int pendingCall,int potAmount, int roundCounter){
+  
     if (roundActive){
     if (Balance < pendingCall){
       roundActive = false;

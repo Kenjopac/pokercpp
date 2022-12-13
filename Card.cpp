@@ -23,14 +23,13 @@ string NameCard(int value, int suit){
     return valuename + " of " + suitname;
   };
 vector<Card> sortCards(vector<Card> unsortedCards){
-  vector<Card> sortedCards;
+  vector<Card> sortedCards = {};
   int onehotvec[52] = {};
   
   for (int i = 0; i <unsortedCards.size();i++){
     onehotvec[unsortedCards[i].index] = i+1; 
   }
   for (int i : onehotvec){
-   
     if (i != 0){
       sortedCards.push_back(unsortedCards[i-1]);
     }

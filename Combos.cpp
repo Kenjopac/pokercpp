@@ -2,7 +2,8 @@
 #include <vector>
 #include "poker.h"
 using namespace std;
-Hand Straight(Hand hand){
+vector<Card> blankHand = {};
+void Straight(Hand hand,Hand& rethand){
   vector<Card> straight; 
       int cardCounterReversed = hand.cardsInHand.size() - 1;
       for (int valueCounterReverse = NUM_OF_VALUES  ; valueCounterReverse >= 0 ;valueCounterReverse--){
@@ -13,12 +14,11 @@ Hand Straight(Hand hand){
           straight.clear();
         }
         if (straight.size() == 5){          
-          return Hand(straight);
+          rethand.updateHand(straight);
         }
       }
-  return Hand();
 }; // returns highest value of straight,
-Hand Flush(Hand hand){
+void Flush(Hand hand, Hand& rethand){
   for (int suit = 0; suit < sizeof(hand.countOfSuits);suit++){
     if (hand.countOfSuits[suit] >=5){
       vector<Card> cardsOfSameSuit;
@@ -27,14 +27,13 @@ Hand Flush(Hand hand){
           cardsOfSameSuit.push_back(hand.cardsInHand[cardCounterReversed]);
         }
         if (cardsOfSameSuit.size() == 5){
-          return cardsOfSameSuit;
+          rethand.updateHand(cardsOfSameSuit);
         }
       }
     }
   }
-  return Hand();
 };
-Hand StraightFlush(Hand hand){ // add highest value...
+void StraightFlush(Hand hand,Hand&rethand){ // add highest value...
   for (int suit = 0; suit < sizeof(hand.countOfSuits); suit++){
     if (hand.countOfSuits[suit] >= 5){ // first test if there are enough of the suit, not enough cards for multiple straight flushes, in order is fine
       //then make new hand of only same suited cards
@@ -45,50 +44,53 @@ Hand StraightFlush(Hand hand){ // add highest value...
           cardsOfSameSuit.push_back(card);
         }
       }
-      return Straight(Hand(cardsOfSameSuit)); // assumes cards are sorted and all of same suit, if next card is one less, then add to straight counter until straight counter is nSpacesInBetweenStraightLong, start from back of sorted array to return largest straight. 
+      Straight(Hand(cardsOfSameSuit),rethand); // assumes cards are sorted and all of same suit, if next card is one less, then add to straight counter until straight counter is nSpacesInBetweenStraightLong, start from back of sorted array to return largest straight. 
+      
     }
   }
-  return Hand();
+  
 }; //returns index of highest card if straight flush
-Hand OfAKind(int getRepeats, Hand hand){ 
+void OfAKind(int getRepeats, Hand hand, Hand& rethand){ 
   vector<Card> sameValue;
   for (int valueCounterReversed = NUM_OF_VALUES;valueCounterReversed >= 0;valueCounterReversed --){
     if (hand.countOfValues[valueCounterReversed] == getRepeats){
       for (Card card: hand.cardsInHand){
+        
         if (card.value == valueCounterReversed){
+          
           sameValue.push_back(card);
         }
       }
-      return Hand(sameValue);
+      rethand.updateHand(sameValue);
     }
   }
-  
-  return Hand();
 };//returns value of a repeated card 
-Hand FullHouse(Hand hand){
+void FullHouse(Hand hand,Hand& rethand){
   vector<Card> fullHouse;
   
-  bool hastwo, hasthree;
+  bool hastwo = false;
+  bool hasthree = false;
   for (int i = NUM_OF_VALUES; i >= 0; i--){
     if (hand.countOfValues[i] == 3){
+      
       hasthree = true;
     } else if (hand.countOfValues[i] == 2){
       hastwo = true;
     } 
   }
   if (hasthree && hastwo){
-    Hand FullHouse = OfAKind(3, hand);
-    Hand twoOfAKind = OfAKind(2, hand);
+    OfAKind(3, hand, rethand); //add triple
+    Hand twoOfAKind  = Hand();
+    OfAKind(2, hand,twoOfAKind);
     for (Card card: twoOfAKind.cardsInHand){
-      FullHouse.addCard(card);
+      rethand.addCard(card);
     }
-    return FullHouse;
   }else {
-    return Hand();
+  rethand.updateHand(blankHand);
   }
   
 };
-Hand TwoPair(Hand hand){
+void TwoPair(Hand hand, Hand& rethand){
   int pairs = 0;
   for (int value: hand.countOfValues){
     if (value == 2){
@@ -96,20 +98,20 @@ Hand TwoPair(Hand hand){
     }
   }
   if (pairs >= 2){
-    Hand twopairHand = OfAKind(2, hand);
-    for (Card card: twopairHand.cardsInHand){
+    OfAKind(2, hand,rethand);
+    for (Card card: rethand.cardsInHand){
       hand.removeCard(card);
     }
-    for (Card card: OfAKind(2, hand).cardsInHand){
-      
-      twopairHand.addCard(card);
+    Hand newTwoPair = Hand();
+    OfAKind(2,hand,newTwoPair);
+    for (Card card: newTwoPair.cardsInHand){
+      rethand.addCard(card);
     }
-    return twopairHand;
   } else{
-    return Hand();
+  rethand.updateHand(blankHand);
   }
 };
-
+/*
 Hand HighestCombo(Hand hand){
   if (StraightFlush(hand).isEmpty == false ){
     return StraightFlush(hand);
@@ -131,25 +133,63 @@ Hand HighestCombo(Hand hand){
     return hand;
   }
 };
-
+*/
 float HighestComboValue(Hand hand){
-  if (StraightFlush(hand).isEmpty == false ){
-    return 9 + StraightFlush(hand).cardsInHand[4].value / 100;
-  } else if (OfAKind(4,hand).isEmpty == false ){
-    return 8 + OfAKind(4,hand).cardsInHand[2].value/100;
-  } else if (FullHouse(hand).isEmpty == false){
-    return 7 + FullHouse(hand).cardsInHand[2].value/100;
-  } else if (Flush(hand).isEmpty == false){
-    return 6 + Flush(hand).cardsInHand[4].value/ 100;
-  } else if (Straight(hand).isEmpty == false){
-    return 5 + Straight(hand).cardsInHand[4].value/100;
-  } else if (OfAKind(3,hand).isEmpty == false){
-    return 4 + OfAKind(3,hand).cardsInHand[0].value/100;
-  } else if (TwoPair(hand).isEmpty == false){
-    return 3 + TwoPair(hand).cardsInHand[0].value/100;
-  } else if (OfAKind(2,hand).isEmpty == false){
-    return 2 + OfAKind(2,hand).cardsInHand[0].value/100;
-  } else {
-    return hand.cardsInHand[0].value/10;
+  if (hand.isEmpty == true){
+    return 0;
+  } else{
+  Hand rethand = Hand();
+  StraightFlush(hand,rethand);
+  int LAST_CARD_COMBO = 4;
+  int MIDDLE_CARD_COMBO = 2;
+  int FIRST_CARD = 0;
+  if (rethand.isEmpty == false) {
+    return 8 + (float)rethand.cardsInHand[LAST_CARD_COMBO].value / 100;
+  } else{
+    rethand.updateHand(blankHand);
+  } 
+  OfAKind(4, hand, rethand);
+  if (rethand.isEmpty == false) {
+    return 7 + (float)rethand.cardsInHand[FIRST_CARD].value / 100;
+  } else{
+    rethand.updateHand(blankHand);
+  } 
+  FullHouse(hand, rethand);
+  if (rethand.isEmpty == false) {
+    return 6 + (float)rethand.cardsInHand[MIDDLE_CARD_COMBO].value / 100;
+  } else{
+    rethand.updateHand(blankHand);
+  } 
+  Flush(hand,rethand);
+  if (rethand.isEmpty == false){
+    return 5 + (float)rethand.cardsInHand[LAST_CARD_COMBO].value / 100;
+  }else{
+    rethand.updateHand(blankHand);
+  } 
+  Straight(hand,rethand);
+  if (rethand.isEmpty == false){
+    return 4 + (float)rethand.cardsInHand[LAST_CARD_COMBO].value / 100;
+  }else{
+    rethand.updateHand(blankHand);
+  } 
+  OfAKind(3, hand, rethand);
+  if (rethand.isEmpty == false){
+    return 3 + (float)rethand.cardsInHand[FIRST_CARD].value / 100;
+  }else{
+    rethand.updateHand(blankHand);
+  } 
+  TwoPair(hand, rethand);
+  if (rethand.isEmpty == false) {
+    return 2 + (float)rethand.cardsInHand[rethand.cardsInHand.size() - 1].value / 100;
+  } else{
+    rethand.updateHand(blankHand);
+  } 
+  OfAKind(2, hand, rethand);
+  if (rethand.isEmpty == false) {
+    return 1 + (float)rethand.cardsInHand[0].value / 100;
+  } else{
+    rethand.updateHand(blankHand);
+  } 
+  return (float) hand.cardsInHand[hand.cardsInHand.size() - 1].value / 100;
   }
 };

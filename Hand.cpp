@@ -5,15 +5,20 @@ using namespace std;
 
 void Hand::updateData(std::vector<Card> CurrentHand){
   for (int i = 0; i < NUM_OF_VALUES;i++){
-    Hand::countOfValues[i] = 0;
+    countOfValues[i] = 0;
     if (i < 4){
-    Hand::countOfSuits[i] = 0;
+    countOfSuits[i] = 0;
     }
   }
   
   for (Card card: CurrentHand){ 
-    Hand::countOfValues[card.value]++;
-    Hand::countOfSuits[card.suit]++;
+    countOfValues[card.value]++;
+    countOfSuits[card.suit]++;
+  }
+  if (CurrentHand.size() == 0){
+    isEmpty = true;
+  } else {
+    isEmpty = false;
   }
 };
 void Hand::removeCard(Card removeThisCard){
@@ -28,9 +33,9 @@ void Hand::removeCard(Card removeThisCard){
 std::string Hand::readHand(){
   std::string allCards;
   for (Card card: Hand::cardsInHand){
-    allCards.append("-");
+    allCards.append(" ");
     allCards.append(card.name);
-    allCards.append("-");
+    allCards.append(" ");
   }
   return allCards;
 };
@@ -41,7 +46,7 @@ void Hand::addCard(Card card){
   isEmpty = false;
 };
 void Hand::updateHand(std::vector<Card> CurrentHand){
-  Hand::cardsInHand = sortCards(CurrentHand);
+  cardsInHand = sortCards(CurrentHand);
   updateData(cardsInHand);
   
 };
